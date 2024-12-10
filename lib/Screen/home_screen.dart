@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'Item.dart';
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
 
@@ -30,6 +30,21 @@ class _HomescreenState extends State<Homescreen> {
             ),
             _drawerItem(Icons.favorite, 'Favorites'),
             _drawerItem(Icons.fastfood, 'Quick & Easy'),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ItemScreen()), // Navigate to NewScreen
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                primary: Colors.blue, // Button background color
+                onPrimary: Colors.white, // Button text color
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Go to New Screen'),
+            ),
             const ExpansionTile(
               title: Text('Meals'),
               children: [
@@ -68,7 +83,9 @@ class _HomescreenState extends State<Homescreen> {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
       title: Text(title),
-      onTap: () {},
+      onTap: () {
+        // Add functionality if needed for the menu items
+      },
     );
   }
 }
@@ -149,46 +166,39 @@ List<Map<String, dynamic>> recipes = [
     'imagePath': 'assets/images/Cloud.png',
   },
   {
-    'name': 'Strawberry Overnight Oats',
-    'website': 'lifemadesweeter.com',
-    'tags': ['Easy', '5 mins', 'quick and easy', 'healthy'],
+    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
+    'website': 'damndelicious.net',
+    'tags': ['Medium', '60 mins', 'prep-friendly'],
     'imagePath': 'assets/images/Cloud.png',
   },
   {
-    'name': 'Strawberry Overnight Oats',
-    'website': 'lifemadesweeter.com',
-    'tags': ['Easy', '5 mins', 'quick and easy', 'healthy'],
+    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
+    'website': 'damndelicious.net',
+    'tags': ['Medium', '60 mins', 'prep-friendly'],
     'imagePath': 'assets/images/Cloud.png',
   },
   {
-    'name': 'Strawberry Overnight Oats',
-    'website': 'lifemadesweeter.com',
-    'tags': ['Easy', '5 mins', 'quick and easy', 'healthy'],
+    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
+    'website': 'damndelicious.net',
+    'tags': ['Medium', '60 mins', 'prep-friendly'],
     'imagePath': 'assets/images/Cloud.png',
   },
   {
-    'name': 'Strawberry Overnight Oats',
-    'website': 'lifemadesweeter.com',
-    'tags': ['Easy', '5 mins', 'quick and easy', 'healthy'],
+    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
+    'website': 'damndelicious.net',
+    'tags': ['Medium', '60 mins', 'prep-friendly'],
     'imagePath': 'assets/images/Cloud.png',
   },
   {
-    'name': 'Strawberry Overnight Oats',
-    'website': 'lifemadesweeter.com',
-    'tags': ['Easy', '5 mins', 'quick and easy', 'healthy'],
+    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
+    'website': 'damndelicious.net',
+    'tags': ['Medium', '60 mins', 'prep-friendly'],
     'imagePath': 'assets/images/Cloud.png',
   },
   {
-    'name': 'Strawberry Overnight Oats',
-    'website': 'lifemadesweeter.com',
-    'tags': ['Easy', '5 mins', 'quick and easy', 'healthy'],
-    'imagePath': 'assets/images/Cloud.png',
-  },
-
-  {
-    'name': 'Strawberry Overnight Oats',
-    'website': 'lifemadesweeter.com',
-    'tags': ['Easy', '5 mins', 'quick and easy', 'healthy'],
+    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
+    'website': 'damndelicious.net',
+    'tags': ['Medium', '60 mins', 'prep-friendly'],
     'imagePath': 'assets/images/Cloud.png',
   },
   {
