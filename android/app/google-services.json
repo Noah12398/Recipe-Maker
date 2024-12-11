@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "819014438238",
+    "project_id": "recipe-maker-9c7a0",
+    "storage_bucket": "recipe-maker-9c7a0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:819014438238:android:f138fcfcda2393d66293cf",
+        "android_client_info": {
+          "package_name": "com.example.recipe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxlCl982nv_j0dw07Xpr4hBTj41YUvUTQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'Item.dart';
-import 'Recipedetail.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
 
@@ -9,6 +9,8 @@ class Homescreen extends StatefulWidget {
 }
 
 class _HomescreenState extends State<Homescreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,102 +23,72 @@ class _HomescreenState extends State<Homescreen> {
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.green,
-              ),
+              decoration: BoxDecoration(color: Colors.green),
               child: Text(
                 'Menu',
                 style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
-            _drawerItem(Icons.favorite, 'Favorites'),
-            _drawerItem(Icons.fastfood, 'Quick & Easy'),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ItemScreen()), // Navigate to NewScreen
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.white, backgroundColor: Colors.blue, // Button text color
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: const Text('Go to New Screen'),
-            ),
-            const ExpansionTile(
-              title: Text('Meals'),
-              children: [
-                ListTile(title: Text('Breakfast')),
-                ListTile(title: Text('Main Courses')),
-                ListTile(title: Text('Side Dishes')),
-                ListTile(title: Text('Snacks')),
-                ListTile(title: Text('Desserts')),
-                ListTile(title: Text('Beverages')),
-              ],
-            ),
-            const ExpansionTile(
-              title: Text('Categories'),
-              children: [
-                ListTile(title: Text('Meat')),
-                ListTile(title: Text('Poultry')),
-                ListTile(title: Text('Seafood')),
-                ListTile(title: Text('Vegetables Based')),
-                ListTile(title: Text('Rice & Pasta')),
-                ListTile(title: Text('Baking')),
-                ListTile(title: Text('Others')),
-              ],
-            ),
+            _drawerItem(Icons.add, 'Add Recipe', () {
+              _navigateToAddRecipe(context);
+            }),
           ],
         ),
       ),
-      body: const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: RecipeGallery(),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _firestore.collection('recipes').snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final recipes = snapshot.data!.docs;
+
+            return GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: recipes.length,
+              itemBuilder: (context, index) {
+                final recipe = recipes[index].data() as Map<String, dynamic>;
+                return _recipeCard(context, recipe, recipes[index].id);
+              },
+            );
+          },
+        ),
       ),
     );
   }
 
   // Drawer item helper
-  ListTile _drawerItem(IconData icon, String title) {
+  ListTile _drawerItem(IconData icon, String title, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
       title: Text(title),
-      onTap: () {
-        // Add functionality if needed for the menu items
-      },
+      onTap: onTap,
     );
   }
-}
 
-class RecipeGallery extends StatelessWidget {
-  const RecipeGallery({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4, // Number of items per row
-        crossAxisSpacing: 10, // Space between rows
-        mainAxisSpacing: 10, // Space between columns
-      ),
-      itemCount: recipes.length,
-      itemBuilder: (context, index) {
-        return _recipeCard(context, recipes[index]); // Pass context here
-      },
+  // Navigate to Add Recipe Screen
+  void _navigateToAddRecipe(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AddRecipeScreen()),
     );
   }
 
   // Recipe card helper
-  Widget _recipeCard(BuildContext context, Map<String, dynamic> recipe) {
+  Widget _recipeCard(BuildContext context, Map<String, dynamic> recipe, String id) {
     return GestureDetector(
       onTap: () {
-        // Navigate to the new screen, passing the recipe data
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => RecipeDetailScreen(recipe: recipe),
+            builder: (context) => EditRecipeScreen(recipeId: id, recipe: recipe),
           ),
         );
       },
@@ -128,38 +100,17 @@ class RecipeGallery extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Recipe image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
-                child: Image.asset(
-                  recipe['imagePath'],
-                  height: 100,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Recipe name and website
+              // Recipe name
               Text(
-                recipe['name'],
+                recipe['name'] ?? '',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              Text(
-                recipe['website'],
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: 4),
-              // Tags and details
+              // Recipe tags
               Wrap(
                 spacing: 4,
                 runSpacing: 4,
-                children: recipe['tags']
-                    .map<Widget>(
-                      (tag) => Chip(
-                        label: Text(tag, style: const TextStyle(fontSize: 10)),
-                        backgroundColor: Colors.green[100],
-                      ),
-                    )
+                children: (recipe['tags'] as List<dynamic>)
+                    .map((tag) => Chip(label: Text(tag.toString())))
                     .toList(),
               ),
             ],
@@ -170,56 +121,109 @@ class RecipeGallery extends StatelessWidget {
   }
 }
 
+class AddRecipeScreen extends StatefulWidget {
+  @override
+  _AddRecipeScreenState createState() => _AddRecipeScreenState();
+}
 
-// Sample recipes data
-List<Map<String, dynamic>> recipes = [
-  {
-    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
-    'website': 'damndelicious.net',
-    'tags': ['Medium', '60 mins', 'prep-friendly'],
-    'imagePath': 'build/Cloud.png',
-  },
-  {
-    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
-    'website': 'damndelicious.net',
-    'tags': ['Medium', '60 mins', 'prep-friendly'],
-    'imagePath': 'build/Cloud.png',
-  },
-  {
-    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
-    'website': 'damndelicious.net',
-    'tags': ['Medium', '60 mins', 'prep-friendly'],
-    'imagePath': 'build/Cloud.png',
-  },
-  {
-    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
-    'website': 'damndelicious.net',
-    'tags': ['Medium', '60 mins', 'prep-friendly'],
-    'imagePath': 'build/Cloud.png',
-  },
-  {
-    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
-    'website': 'damndelicious.net',
-    'tags': ['Medium', '60 mins', 'prep-friendly'],
-    'imagePath': 'build/Cloud.png',
-  },
-  {
-    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
-    'website': 'damndelicious.net',
-    'tags': ['Medium', '60 mins', 'prep-friendly'],
-    'imagePath': 'build/Cloud.png',
-  },
-  {
-    'name': 'Make Ahead Breakfast Biscuit Sandwiches',
-    'website': 'damndelicious.net',
-    'tags': ['Medium', '60 mins', 'prep-friendly'],
-    'imagePath': 'build/Cloud.png',
-  },
-  {
-    'name': 'Strawberry Overnight Oats',
-    'website': 'lifemadesweeter.com',
-    'tags': ['Easy', '5 mins', 'quick and easy', 'healthy'],
-    'imagePath': 'build/Cloud.png',
-  },
-  // Add more recipes...
-];
+class _AddRecipeScreenState extends State<AddRecipeScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _firestore = FirebaseFirestore.instance;
+
+  String name = '';
+  List<String> tags = [];
+
+  void _saveRecipe() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      await _firestore.collection('recipes').add({
+        'name': name,
+        'tags': tags,
+      });
+      await _firestore.collection('recipes').add({
+        'name': 'Make Ahead Breakfast Biscuit Sandwiches',
+        'website': 'damndelicious.net',
+        'tags': ['Medium', '60 mins', 'prep-friendly'],
+        'imagePath': "build/Cloud.png",
+        'description': 'Delicious and easy-to-make breakfast biscuits.',
+        'nutrition': {
+          'calories': 200,
+          'protein': 25,
+          'carbs': 5,
+          'fats': 83,
+        },
+      });
+
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add Recipe'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'Recipe Name'),
+                onSaved: (value) {
+                  name = value!;
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a recipe name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _saveRecipe,
+                child: const Text('Save Recipe'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class EditRecipeScreen extends StatelessWidget {
+  final String recipeId;
+  final Map<String, dynamic> recipe;
+
+  EditRecipeScreen({required this.recipeId, required this.recipe});
+
+  @override
+  Widget build(BuildContext context) {
+    final _firestore = FirebaseFirestore.instance;
+
+    void _deleteRecipe() async {
+      await _firestore.collection('recipes').doc(recipeId).delete();
+      Navigator.pop(context);
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Recipe'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: _deleteRecipe,
+          ),
+        ],
+      ),
+      body: Center(
+        child: Text('Edit Recipe Feature Coming Soon!'),
+      ),
+    );
+  }
+}
