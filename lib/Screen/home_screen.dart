@@ -110,7 +110,7 @@ class _HomescreenState extends State<Homescreen> {
 
             return GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
+                crossAxisCount: 5,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
               ),
@@ -152,39 +152,75 @@ class _HomescreenState extends State<Homescreen> {
         );
       },
       child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 5,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EditRecipeScreen(recipeId: id, recipe: recipe),
-                    ),
-                  );
-                },
-                child: const Text('Edit Recipe'),
-              ),
-              Text(
-                recipe['name'] ?? '',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: (recipe['tags'] as List<dynamic>)
-                    .map((tag) => Chip(label: Text(tag.toString())))
-                    .toList(),
-              ),
-            ],
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  elevation: 5,
+  child: Padding(
+    padding: const EdgeInsets.all(8.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Recipe Name
+        Text(
+          recipe['name'] ?? '',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        const SizedBox(height: 8),
+
+        // Ingredients
+        Text(
+          'Ingredients: ${recipe['ingredients']?.join(', ') ?? 'N/A'}',
+          style: const TextStyle(fontSize: 14),
+        ),
+        const SizedBox(height: 8),
+
+        // Cuisine
+        Text(
+          'Cuisine: ${recipe['cuisine'] ?? 'N/A'}',
+          style: const TextStyle(fontSize: 14),
+        ),
+        const SizedBox(height: 8),
+
+        // Difficulty
+        Text(
+          'Difficulty: ${recipe['difficulty'] ?? 'N/A'}',
+          style: const TextStyle(fontSize: 14),
+        ),
+        const SizedBox(height: 12),
+
+        // Tags
+        Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: (recipe['tags'] as List<dynamic>?)
+                  ?.map((tag) => Chip(label: Text(tag.toString())))
+                  .toList() ??
+              [],
+        ),
+        const SizedBox(height: 12),
+
+        // Centered Button
+        Center(
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      EditRecipeScreen(recipeId: id, recipe: recipe),
+                ),
+              );
+            },
+            child: const Text(
+              'Edit',
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
-      ),
+      ],
+    ),
+  ),
+),
+
     );
   }
 
@@ -313,6 +349,7 @@ class _HomescreenState extends State<Homescreen> {
                 selectedDifficulty = 'All';
                 selectedIngredients.clear();
               });
+
               Navigator.of(context).pop();
             },
             child: const Text('Reset'),
