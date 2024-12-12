@@ -3,8 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:recipe/Screen/Recipedetail.dart';
 import 'EditScreen.dart';
 import 'AddScreen.dart';
-import 'package:multi_select_flutter/multi_select_flutter.dart';
-import 'package:multi_select_flutter/util/multi_select_item.dart';
 
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
@@ -19,6 +17,28 @@ class _HomescreenState extends State<Homescreen> {
   String selectedCuisine = 'All';
   String selectedDifficulty = 'All';
   List<String> selectedIngredients = []; // Initialize as an empty list
+  List<String> availableIngredients = []; // To hold available ingredients options
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchIngredients(); // Fetch the available ingredients from Firestore
+  }
+
+  void _fetchIngredients() async {
+    final querySnapshot = await _firestore.collection('recipes').get();
+    final ingredients = <String>{};
+    for (var doc in querySnapshot.docs) {
+      final recipe = doc.data() as Map<String, dynamic>;
+      final recipeIngredients = recipe['ingredients'] as List<dynamic>?;
+      if (recipeIngredients != null) {
+        ingredients.addAll(recipeIngredients.cast<String>());
+      }
+    }
+    setState(() {
+      availableIngredients = ingredients.toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +70,7 @@ class _HomescreenState extends State<Homescreen> {
             _drawerItem(Icons.add, 'Add Recipe', () {
               _navigateToAddRecipe(context);
             }),
-            _drawerItem(Icons.filter_list, 'Filter Recipes', () {
+            _drawerItem(Icons.filter_alt, 'Filter Recipes', () {
               _showFilterDialog(context);
             }),
           ],
@@ -81,7 +101,7 @@ class _HomescreenState extends State<Homescreen> {
                   recipeData['difficulty'] == selectedDifficulty;
 
               final ingredientsMatch = selectedIngredients.isEmpty ||
-                  (recipeData['ingredients'] as List<dynamic>)
+                  (recipeData['ingredients'] as List<dynamic>? ?? [])
                       .any((ingredient) =>
                           selectedIngredients.contains(ingredient));
 
@@ -148,7 +168,7 @@ class _HomescreenState extends State<Homescreen> {
                     ),
                   );
                 },
-                child: const Text('Edit Recipe'),  // Add a child widget here, such as Text
+                child: const Text('Edit Recipe'),
               ),
               Text(
                 recipe['name'] ?? '',
@@ -205,76 +225,108 @@ class _HomescreenState extends State<Homescreen> {
   }
 
   void _showFilterDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Filter Recipes"),
-          content: Column(
+  print('Available Ingredients: $availableIngredients'); // Debug print
+  print('Selected Ingredients: $selectedIngredients');   // Debug print
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("Filter Recipes"),
+        content: SingleChildScrollView(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Cuisine filter
               DropdownButton<String>(
                 value: selectedCuisine,
-                onChanged: (value) {
+                onChanged: (newValue) {
                   setState(() {
-                    selectedCuisine = value!;
+                    selectedCuisine = newValue!;
                   });
                 },
-                items: ['All', 'Italian', 'Indian', 'Chinese', 'Mexican']
-                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                    .toList(),
+                items: <String>['All', 'Italian', 'Chinese', 'Indian', 'Mexican']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 10),
+              // Difficulty filter
               DropdownButton<String>(
                 value: selectedDifficulty,
+                onChanged: (newValue) {
+                  setState(() {
+                    selectedDifficulty = newValue!;
+                  });
+                },
+                items: <String>['All', 'Easy', 'Medium', 'Hard']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              // Ingredients filter as a dropdown
+              DropdownButtonFormField<String>(
+                hint: const Text("Select Ingredients"),
+                isExpanded: true,
+                items: availableIngredients.map<DropdownMenuItem<String>>((String ingredient) {
+                  return DropdownMenuItem<String>(
+                    value: ingredient,
+                    child: Text(ingredient),
+                  );
+                }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    selectedDifficulty = value!;
+                    if (value != null && !selectedIngredients.contains(value)) {
+                      selectedIngredients.add(value);
+                    }
                   });
+                  print('Selected Ingredients Updated: $selectedIngredients'); // Debug print
                 },
-                items: ['All', 'Easy', 'Medium', 'Hard']
-                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                    .toList(),
               ),
-              const SizedBox(height: 10),
-              MultiSelectDialogField(
-                items: [
-                  MultiSelectItem<String>('Tomato', 'Tomato'),
-                  MultiSelectItem<String>('Chicken', 'Chicken'),
-                  MultiSelectItem<String>('Cheese', 'Cheese'),
-                ],
-                initialValue: selectedIngredients.isNotEmpty ? selectedIngredients : [], // Ensure initial value is set
-                onConfirm: (values) {
-                  setState(() {
-                    selectedIngredients = List<String>.from(values ?? []); // Ensure selectedIngredients is never null
-                  });
-                },
-                title: const Text('Select Ingredients'),
-                buttonText: const Text('Select Ingredients'),
+              // Display selected ingredients
+              Wrap(
+                children: selectedIngredients.map((ingredient) {
+                  return Chip(
+                    label: Text(ingredient),
+                    onDeleted: () {
+                      setState(() {
+                        selectedIngredients.remove(ingredient);
+                      });
+                      print('Ingredient Removed: $ingredient'); // Debug print
+                    },
+                  );
+                }).toList(),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  selectedCuisine = 'All';
-                  selectedDifficulty = 'All';
-                  selectedIngredients = [];
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Clear Filters'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Apply Filters'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() {
+                selectedCuisine = 'All';
+                selectedDifficulty = 'All';
+                selectedIngredients.clear();
+              });
+              Navigator.of(context).pop();
+            },
+            child: const Text('Reset'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Apply Filters'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
 }
