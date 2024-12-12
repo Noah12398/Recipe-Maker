@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:recipe/Screen/Recipedetail.dart';
+import 'EditScreen.dart';
+import 'AddScreen.dart';
+import 'package:multi_select_flutter/multi_select_flutter.dart';
+import 'package:multi_select_flutter/util/multi_select_item.dart';
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
 
@@ -10,6 +14,10 @@ class Homescreen extends StatefulWidget {
 
 class _HomescreenState extends State<Homescreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String searchQuery = '';
+  String selectedCuisine = 'All';
+  String selectedDifficulty = 'All';
+  List<String> selectedIngredients = [];
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +25,15 @@ class _HomescreenState extends State<Homescreen> {
       appBar: AppBar(
         title: const Text("Recipes Gallery"),
         backgroundColor: Colors.green,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () => _showSearchDialog(context),
+            ),
+          ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -32,6 +49,9 @@ class _HomescreenState extends State<Homescreen> {
             _drawerItem(Icons.add, 'Add Recipe', () {
               _navigateToAddRecipe(context);
             }),
+            _drawerItem(Icons.filter_list, 'Filter Recipes', () {
+              _showFilterDialog(context);
+            }),
           ],
         ),
       ),
@@ -45,6 +65,27 @@ class _HomescreenState extends State<Homescreen> {
             }
 
             final recipes = snapshot.data!.docs;
+            final filteredRecipes = recipes.where((recipe) {
+              final recipeData = recipe.data() as Map<String, dynamic>;
+
+              final nameMatch = recipeData['name']
+                  .toString()
+                  .toLowerCase()
+                  .contains(searchQuery.toLowerCase());
+
+              final cuisineMatch = selectedCuisine == 'All' ||
+                  recipeData['cuisine'] == selectedCuisine;
+
+              final difficultyMatch = selectedDifficulty == 'All' ||
+                  recipeData['difficulty'] == selectedDifficulty;
+
+              final ingredientsMatch = selectedIngredients.isEmpty ||
+                  (recipeData['ingredients'] as List<dynamic>)
+                      .any((ingredient) =>
+                          selectedIngredients.contains(ingredient));
+
+              return nameMatch && cuisineMatch && difficultyMatch && ingredientsMatch;
+            }).toList();
 
             return GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -52,10 +93,10 @@ class _HomescreenState extends State<Homescreen> {
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
               ),
-              itemCount: recipes.length,
+              itemCount: filteredRecipes.length,
               itemBuilder: (context, index) {
-                final recipe = recipes[index].data() as Map<String, dynamic>;
-                return _recipeCard(context, recipe, recipes[index].id);
+                final recipe = filteredRecipes[index].data() as Map<String, dynamic>;
+                return _recipeCard(context, recipe, filteredRecipes[index].id);
               },
             );
           },
@@ -64,7 +105,6 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 
-  // Drawer item helper
   ListTile _drawerItem(IconData icon, String title, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
@@ -73,7 +113,6 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 
-  // Navigate to Add Recipe Screen
   void _navigateToAddRecipe(BuildContext context) {
     Navigator.push(
       context,
@@ -81,14 +120,13 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 
-  // Recipe card helper
   Widget _recipeCard(BuildContext context, Map<String, dynamic> recipe, String id) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EditRecipeScreen(recipeId: id, recipe: recipe),
+            builder: (context) => RecipeDetailScreen(recipe: recipe),
           ),
         );
       },
@@ -100,12 +138,22 @@ class _HomescreenState extends State<Homescreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Recipe name
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditRecipeScreen(recipeId: id, recipe: recipe),
+                    ),
+                  );
+                },
+                child: const Text('Edit Recipe'),  // Add a child widget here, such as Text
+              ),
+
               Text(
                 recipe['name'] ?? '',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              // Recipe tags
               Wrap(
                 spacing: 4,
                 runSpacing: 4,
@@ -119,382 +167,114 @@ class _HomescreenState extends State<Homescreen> {
       ),
     );
   }
-}
 
-class AddRecipeScreen extends StatefulWidget {
-  @override
-  _AddRecipeScreenState createState() => _AddRecipeScreenState();
-}
-
-class _AddRecipeScreenState extends State<AddRecipeScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _firestore = FirebaseFirestore.instance;
-
-  String name = '';
-  List<String> tags = [];
-
-  void _saveRecipe() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      await _firestore.collection('recipes').add({
-        'name': name,
-        'tags': tags,
-      });
-      await _firestore.collection('recipes').add({
-        'name': 'Make Ahead Breakfast Biscuit Sandwiches',
-        'website': 'damndelicious.net',
-        'tags': ['Medium', '60 mins', 'prep-friendly'],
-        'imagePath': "build/Cloud.png",
-        'description': 'Delicious and easy-to-make breakfast biscuits.',
-        'nutrition': {
-          'calories': 200,
-          'protein': 25,
-          'carbs': 5,
-          'fats': 83,
-        },
-      });
-
-      Navigator.pop(context);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Recipe'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Recipe Name'),
-                onSaved: (value) {
-                  name = value!;
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a recipe name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _saveRecipe,
-                child: const Text('Save Recipe'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class EditRecipeScreen extends StatelessWidget {
-  final String recipeId;
-  final Map<String, dynamic> recipe;
-
-  EditRecipeScreen({required this.recipeId, required this.recipe});
-
-  @override
-  Widget build(BuildContext context) {
-    final _firestore = FirebaseFirestore.instance;
-
-    // Controllers for form fields
-    final TextEditingController nameController = TextEditingController(text: recipe['name']);
-    final TextEditingController descriptionController = TextEditingController(text: recipe['description']);
-    final TextEditingController tagsController = TextEditingController(text: (recipe['tags'] as List).join(', '));
-    final TextEditingController caloriesController = TextEditingController(text: recipe['nutrition']['calories'].toString());
-    final TextEditingController proteinController = TextEditingController(text: recipe['nutrition']['protein'].toString());
-    final TextEditingController carbsController = TextEditingController(text: recipe['nutrition']['carbs'].toString());
-    final TextEditingController fatsController = TextEditingController(text: recipe['nutrition']['fats'].toString());
-
-    // Function to update the recipe in Firestore
-    void _updateRecipe() async {
-      final updatedRecipe = {
-        'name': nameController.text,
-        'description': descriptionController.text,
-        'tags': tagsController.text.split(',').map((tag) => tag.trim()).toList(),
-        'nutrition': {
-          'calories': int.tryParse(caloriesController.text) ?? 0,
-          'protein': int.tryParse(proteinController.text) ?? 0,
-          'carbs': int.tryParse(carbsController.text) ?? 0,
-          'fats': int.tryParse(fatsController.text) ?? 0,
-        },
-      };
-
-      await _firestore.collection('recipes').doc(recipeId).update(updatedRecipe);
-      Navigator.pop(context);
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Recipe'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () async {
-              await _firestore.collection('recipes').doc(recipeId).delete();
-              Navigator.pop(context);
+  void _showSearchDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Search Recipes"),
+          content: TextField(
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value;
+              });
             },
+            decoration: const InputDecoration(hintText: 'Enter recipe name'),
           ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  searchQuery = '';
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Clear'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Search'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Filter Recipes"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: nameController,
-                decoration:  InputDecoration(
-                  labelText: 'Name',
-                  hintText: 'Enter text here...', // Hint shown inside the field when empty
-                  prefixIcon: Icon(Icons.text_fields), // Icon at the start
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0), // Rounded corners
-                  ),
-                  filled: true, // To enable background color
-                  fillColor: Colors.grey[200], // Background color of the text field
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue, width: 2.0), // Border when focused
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Border when not focused
-                  ),
-                  errorText: null, // Add error validation messages here
-                ),
-                style: TextStyle(
-                  fontSize: 16.0, // Font size
-                  color: Colors.black, // Text color
-                  fontWeight: FontWeight.bold, // Bold text
-                ),
-                maxLines: 1, // Restrict to one line (use null for multiline)
-                textCapitalization: TextCapitalization.words, // Capitalize each word
-                cursorColor: Colors.blue, // Cursor color
-                cursorWidth: 2.0, // Cursor width
+              DropdownButton<String>(
+                value: selectedCuisine,
+                onChanged: (value) {
+                  setState(() {
+                    selectedCuisine = value!;
+                  });
+                },
+                items: ['All', 'Italian', 'Indian', 'Chinese', 'Mexican']
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descriptionController,
-                decoration:  InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'Enter text here...', // Hint shown inside the field when empty
-                  prefixIcon: Icon(Icons.text_fields), // Icon at the start
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0), // Rounded corners
-                  ),
-                  filled: true, // To enable background color
-                  fillColor: Colors.grey[200], // Background color of the text field
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue, width: 2.0), // Border when focused
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Border when not focused
-                  ),
-                  errorText: null, // Add error validation messages here
-                ),
-                style: TextStyle(
-                  fontSize: 16.0, // Font size
-                  color: Colors.black, // Text color
-                  fontWeight: FontWeight.bold, // Bold text
-                ),
-                maxLines: 1, // Restrict to one line (use null for multiline)
-                textCapitalization: TextCapitalization.words, // Capitalize each word
-                cursorColor: Colors.blue, // Cursor color
-                cursorWidth: 2.0, // Cursor width
+              const SizedBox(height: 10),
+              DropdownButton<String>(
+                value: selectedDifficulty,
+                onChanged: (value) {
+                  setState(() {
+                    selectedDifficulty = value!;
+                  });
+                },
+                items: ['All', 'Easy', 'Medium', 'Hard']
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: tagsController,
-                decoration: InputDecoration(labelText: 'Tags (comma-separated)',
-                 hintText: 'Enter text here...', // Hint shown inside the field when empty
-                  prefixIcon: Icon(Icons.text_fields), // Icon at the start
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0), // Rounded corners
-                  ),
-                  filled: true, // To enable background color
-                  fillColor: Colors.grey[200], // Background color of the text field
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue, width: 2.0), // Border when focused
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Border when not focused
-                  ),
-                  errorText: null, // Add error validation messages here
-                ),
-                style: TextStyle(
-                  fontSize: 16.0, // Font size
-                  color: Colors.black, // Text color
-                  fontWeight: FontWeight.bold, // Bold text
-                ),
-                maxLines: 1, // Restrict to one line (use null for multiline)
-                textCapitalization: TextCapitalization.words, // Capitalize each word
-                cursorColor: Colors.blue, // Cursor color
-                cursorWidth: 2.0, // Cursor width
+              const SizedBox(height: 10),
+              MultiSelectDialogField(
+                items: [
+                  MultiSelectItem<String>('Tomato', 'Tomato'),
+                  MultiSelectItem<String>('Chicken', 'Chicken'),
+                  MultiSelectItem<String>('Cheese', 'Cheese'),
+                ],
+                initialValue: selectedIngredients,
+                onConfirm: (values) {
+                  setState(() {
+                    selectedIngredients = values!;
+                  });
+                },
+                title: const Text('Select Ingredients'),
+                buttonText: const Text('Select Ingredients'),
               ),
-              const SizedBox(height: 16),
-              const Text('Nutrition Information', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextField(
-                controller: caloriesController,
-                keyboardType: TextInputType.number,
-                decoration:  InputDecoration(labelText: 'Calories',
-
-                 hintText: 'Enter text here...', // Hint shown inside the field when empty
-                  prefixIcon: Icon(Icons.text_fields), // Icon at the start
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0), // Rounded corners
-                  ),
-                  filled: true, // To enable background color
-                  fillColor: Colors.grey[200], // Background color of the text field
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue, width: 2.0), // Border when focused
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Border when not focused
-                  ),
-                  errorText: null, // Add error validation messages here
-                ),
-                style: TextStyle(
-                  fontSize: 16.0, // Font size
-                  color: Colors.black, // Text color
-                  fontWeight: FontWeight.bold, // Bold text
-                ),
-                maxLines: 1, // Restrict to one line (use null for multiline)
-                textCapitalization: TextCapitalization.words, // Capitalize each word
-                cursorColor: Colors.blue, // Cursor color
-                cursorWidth: 2.0, // Cursor width
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: proteinController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Protein',
-                hintText: 'Enter text here...', // Hint shown inside the field when empty
-                  prefixIcon: Icon(Icons.text_fields), // Icon at the start
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0), // Rounded corners
-                  ),
-                  filled: true, // To enable background color
-                  fillColor: Colors.grey[200], // Background color of the text field
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue, width: 2.0), // Border when focused
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Border when not focused
-                  ),
-                  errorText: null, // Add error validation messages here
-                ),
-                style: TextStyle(
-                  fontSize: 16.0, // Font size
-                  color: Colors.black, // Text color
-                  fontWeight: FontWeight.bold, // Bold text
-                ),
-                maxLines: 1, // Restrict to one line (use null for multiline)
-                textCapitalization: TextCapitalization.words, // Capitalize each word
-                cursorColor: Colors.blue, // Cursor color
-                cursorWidth: 2.0, // Cursor width
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: carbsController,
-                keyboardType: TextInputType.number,
-                decoration:  InputDecoration(labelText: 'Carbs',
-                hintText: 'Enter text here...', // Hint shown inside the field when empty
-                  prefixIcon: Icon(Icons.text_fields), // Icon at the start
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0), // Rounded corners
-                  ),
-                  filled: true, // To enable background color
-                  fillColor: Colors.grey[200], // Background color of the text field
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue, width: 2.0), // Border when focused
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Border when not focused
-                  ),
-                  errorText: null, // Add error validation messages here
-                ),
-                style: TextStyle(
-                  fontSize: 16.0, // Font size
-                  color: Colors.black, // Text color
-                  fontWeight: FontWeight.bold, // Bold text
-                ),
-                maxLines: 1, // Restrict to one line (use null for multiline)
-                textCapitalization: TextCapitalization.words, // Capitalize each word
-                cursorColor: Colors.blue, // Cursor color
-                cursorWidth: 2.0, // Cursor width
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: fatsController,
-                keyboardType: TextInputType.number,
-                decoration:  InputDecoration(labelText: 'Fats',
-                hintText: 'Enter text here...', // Hint shown inside the field when empty
-                  prefixIcon: Icon(Icons.text_fields), // Icon at the start
-
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0), // Rounded corners
-                  ),
-                  filled: true, // To enable background color
-                  fillColor: Colors.grey[200], // Background color of the text field
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue, width: 2.0), // Border when focused
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey, width: 1.0), // Border when not focused
-                  ),
-                  errorText: null, // Add error validation messages here
-                ),
-                style: TextStyle(
-                  fontSize: 16.0, // Font size
-                  color: Colors.black, // Text color
-                  fontWeight: FontWeight.bold, // Bold text
-                ),
-                maxLines: 1, // Restrict to one line (use null for multiline)
-                textCapitalization: TextCapitalization.words, // Capitalize each word
-                cursorColor: Colors.blue, // Cursor color
-                cursorWidth: 2.0, // Cursor width
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _updateRecipe,
-                style: ElevatedButton.styleFrom(
-                  primary: Color.fromARGB(255, 26, 207, 44), // Button background color
-                  onPrimary: Colors.white, // Text color
-                  padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30), // Button padding
-                  shape: RoundedRectangleBorder( // Button shape
-                    borderRadius: BorderRadius.circular(30), // Rounded corners
-                  ),
-                  elevation: 5, // Shadow effect
-                ),
-                child: const Text(
-                  'Save Changes',
-                  style: TextStyle(
-                    fontSize: 18, // Text size
-                    fontWeight: FontWeight.bold, // Text weight
-                  ),
-                ),
-              )
-
             ],
           ),
-        ),
-      ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  selectedCuisine = 'All';
+                  selectedDifficulty = 'All';
+                  selectedIngredients = [];
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Clear Filters'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Apply Filters'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
-

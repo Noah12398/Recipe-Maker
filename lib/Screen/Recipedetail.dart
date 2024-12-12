@@ -10,7 +10,7 @@ class RecipeDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(recipe['name']),
+        title: Text(recipe['name'] ?? 'No Name'),
         backgroundColor: Colors.green,
       ),
       body: Padding(
@@ -22,17 +22,19 @@ class RecipeDetailScreen extends StatelessWidget {
               // Recipe Image
               ClipRRect(
                 borderRadius: BorderRadius.circular(8.0),
-                child: Image.asset(
-                  recipe['imagePath'],
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                child: recipe['imagePath'] != null
+                    ? Image.asset(
+                        recipe['imagePath'],
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Icon(Icons.broken_image, size: 100),
               ),
               const SizedBox(height: 16),
               // Recipe Name
               Text(
-                recipe['name'],
+                recipe['name'] ?? 'No Name',
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -41,7 +43,7 @@ class RecipeDetailScreen extends StatelessWidget {
               const SizedBox(height: 8),
               // Website
               Text(
-                recipe['website'],
+                recipe['website'] ?? 'No website',
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.grey,
@@ -52,19 +54,19 @@ class RecipeDetailScreen extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 4,
-                children: recipe['tags']
-                    .map<Widget>(
-                      (tag) => Chip(
-                        label: Text(tag),
-                        backgroundColor: Colors.green[100],
-                      ),
-                    )
-                    .toList(),
+                children: recipe['tags'] != null
+                    ? (recipe['tags'] as List<dynamic>)
+                        .map<Widget>((tag) => Chip(
+                              label: Text(tag),
+                              backgroundColor: Colors.green[100],
+                            ))
+                        .toList()
+                    : [Text('No tags available')],
               ),
               const SizedBox(height: 16),
               // Description
               Text(
-                recipe['description'],
+                recipe['description'] ?? 'No description available',
                 style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 16),
