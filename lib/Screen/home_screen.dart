@@ -5,6 +5,7 @@ import 'EditScreen.dart';
 import 'AddScreen.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:multi_select_flutter/util/multi_select_item.dart';
+
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
 
@@ -17,7 +18,7 @@ class _HomescreenState extends State<Homescreen> {
   String searchQuery = '';
   String selectedCuisine = 'All';
   String selectedDifficulty = 'All';
-  List<String> selectedIngredients = [];
+  List<String> selectedIngredients = []; // Initialize as an empty list
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +150,6 @@ class _HomescreenState extends State<Homescreen> {
                 },
                 child: const Text('Edit Recipe'),  // Add a child widget here, such as Text
               ),
-
               Text(
                 recipe['name'] ?? '',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -243,10 +243,10 @@ class _HomescreenState extends State<Homescreen> {
                   MultiSelectItem<String>('Chicken', 'Chicken'),
                   MultiSelectItem<String>('Cheese', 'Cheese'),
                 ],
-                initialValue: selectedIngredients,
+                initialValue: selectedIngredients.isNotEmpty ? selectedIngredients : [], // Ensure initial value is set
                 onConfirm: (values) {
                   setState(() {
-                    selectedIngredients = values!;
+                    selectedIngredients = List<String>.from(values ?? []); // Ensure selectedIngredients is never null
                   });
                 },
                 title: const Text('Select Ingredients'),

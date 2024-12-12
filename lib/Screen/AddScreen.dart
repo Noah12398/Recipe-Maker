@@ -5,6 +5,7 @@ class AddRecipeScreen extends StatefulWidget {
   @override
   _AddRecipeScreenState createState() => _AddRecipeScreenState();
 }
+
 class _AddRecipeScreenState extends State<AddRecipeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _firestore = FirebaseFirestore.instance;
@@ -13,7 +14,10 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   String website = '';
   String description = '';
   String imagePath = '';
+  String cuisine = ''; // Cuisine field
+  String difficulty = 'Easy'; // Difficulty field, default to 'Easy'
   List<String> tags = [];
+  List<String> ingredients = [];
   Map<String, int> nutrition = {
     'calories': 0,
     'protein': 0,
@@ -30,7 +34,10 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         'website': website,
         'tags': tags,
         'description': description,
+        'ingredients': ingredients,
         'nutrition': nutrition,
+        'cuisine': cuisine,  // Save cuisine to Firestore
+        'difficulty': difficulty,  // Save difficulty to Firestore
       });
 
       Navigator.pop(context);
@@ -44,7 +51,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         title: const Text('Add Recipe'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(6.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -63,7 +70,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 6),
 
               // Website
               TextFormField(
@@ -78,7 +85,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 6),
 
               // Recipe Description
               TextFormField(
@@ -93,7 +100,47 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 6),
+
+              // Cuisine
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'Cuisine (e.g., Italian, Chinese)'),
+                onSaved: (value) {
+                  cuisine = value!;
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a cuisine';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 6),
+
+              // Difficulty
+              DropdownButtonFormField<String>(
+                value: difficulty,
+                onChanged: (value) {
+                  setState(() {
+                    difficulty = value!;
+                  });
+                },
+                items: ['Easy', 'Medium', 'Hard']
+                    .map((difficulty) => DropdownMenuItem(
+                          value: difficulty,
+                          child: Text(difficulty),
+                        ))
+                    .toList(),
+                decoration: const InputDecoration(labelText: 'Difficulty'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a difficulty';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 6),
+
               // Tags
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Tags (comma separated)'),
@@ -107,7 +154,22 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 6),
+
+              // Ingredients (comma separated)
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'Ingredients (comma separated)'),
+                onSaved: (value) {
+                  ingredients = value!.split(',').map((e) => e.trim()).toList();
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter some ingredients';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 6),
 
               // Nutrition Info (Calories, Protein, Carbs, Fats)
               TextFormField(
@@ -123,7 +185,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 6),
 
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Protein (g)'),
@@ -138,7 +200,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 6),
 
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Carbs (g)'),
@@ -153,7 +215,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 6),
 
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Fats (g)'),
@@ -168,7 +230,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 6),
 
               // Save Button
               ElevatedButton(
