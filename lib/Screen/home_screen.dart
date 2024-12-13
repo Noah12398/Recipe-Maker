@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:recipe/Screen/Recipedetail.dart';
 import 'EditScreen.dart';
 import 'AddScreen.dart';
-
+import 'MealPlan.dart';
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
 
@@ -12,12 +12,25 @@ class Homescreen extends StatefulWidget {
 }
 
 class _HomescreenState extends State<Homescreen> {
+  
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String searchQuery = '';
   String selectedCuisine = 'All';
   String selectedDifficulty = 'All';
   List<String> selectedIngredients = []; // Initialize as an empty list
   List<String> availableIngredients = []; // To hold available ingredients options
+void _navigateToMealPlan(BuildContext context) async {
+    final recipes = await _firestore.collection('recipes').get().then(
+          (query) => query.docs.map((doc) => doc.data() as Map<String, dynamic>).toList(),
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MealPlanScreen(recipes: recipes),
+          ),
+        );
+      }
 
   @override
   void initState() {
@@ -39,7 +52,7 @@ class _HomescreenState extends State<Homescreen> {
       availableIngredients = ingredients.toList();
     });
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,6 +85,9 @@ class _HomescreenState extends State<Homescreen> {
             }),
             _drawerItem(Icons.filter_alt, 'Filter Recipes', () {
               _showFilterDialog(context);
+            }),
+            _drawerItem(Icons.food_bank, 'Meal Recipes', () {
+              _navigateToMealPlan(context);
             }),
           ],
         ),
@@ -198,6 +214,7 @@ class _HomescreenState extends State<Homescreen> {
         ),
         const SizedBox(height: 12),
 
+        // Centered Button
         // Centered Button
         Center(
           child: ElevatedButton(
