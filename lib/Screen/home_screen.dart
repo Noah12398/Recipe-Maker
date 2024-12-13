@@ -4,6 +4,8 @@ import 'package:recipe/Screen/Recipedetail.dart';
 import 'EditScreen.dart';
 import 'AddScreen.dart';
 import 'MealPlan.dart';
+import 'package:url_launcher/url_launcher.dart'; // Import the url_launcher package
+
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
 
@@ -12,25 +14,12 @@ class Homescreen extends StatefulWidget {
 }
 
 class _HomescreenState extends State<Homescreen> {
-  
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String searchQuery = '';
   String selectedCuisine = 'All';
   String selectedDifficulty = 'All';
   List<String> selectedIngredients = []; // Initialize as an empty list
   List<String> availableIngredients = []; // To hold available ingredients options
-void _navigateToMealPlan(BuildContext context) async {
-    final recipes = await _firestore.collection('recipes').get().then(
-          (query) => query.docs.map((doc) => doc.data() as Map<String, dynamic>).toList(),
-        );
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MealPlanScreen(recipes: recipes),
-          ),
-        );
-      }
 
   @override
   void initState() {
@@ -38,12 +27,14 @@ void _navigateToMealPlan(BuildContext context) async {
     _fetchIngredients(); // Fetch the available ingredients from Firestore
   }
 
+  // Fetch ingredients from Firestore
   void _fetchIngredients() async {
     final querySnapshot = await _firestore.collection('recipes').get();
     final ingredients = <String>{};
     for (var doc in querySnapshot.docs) {
       final recipe = doc.data() as Map<String, dynamic>;
       final recipeIngredients = recipe['ingredients'] as List<dynamic>?;
+
       if (recipeIngredients != null) {
         ingredients.addAll(recipeIngredients.cast<String>());
       }
@@ -52,7 +43,63 @@ void _navigateToMealPlan(BuildContext context) async {
       availableIngredients = ingredients.toList();
     });
   }
-  
+
+  // Share app using url_launcher
+  void _shareApp() async {
+    const String text = 'Check out this amazing recipe app!';
+    final Uri shareUri = Uri(
+      scheme: 'mailto',
+      path: '',  // Optional: You can provide an email address here
+      query: 'subject=Check out this amazing recipe app&body=$text',
+    );
+
+    // Attempt to launch the URL, if the platform supports it
+    if (await canLaunchUrl(shareUri)) {
+      await launchUrl(shareUri);
+    } else {
+      throw 'Could not launch email';
+    }
+  }
+
+  // Share a specific recipe using url_launcher
+  void _shareRecipe(String recipeName) async {
+    final String text = "Check out this recipe: $recipeName! It's delicious and easy to make.";
+    final Uri shareUri = Uri(
+      scheme: 'mailto',
+      path: '',
+      query: 'subject=Recipe: $recipeName&body=$text',
+    );
+
+    // Attempt to launch the URL, if the platform supports it
+    if (await canLaunchUrl(shareUri)) {
+      await launchUrl(shareUri);
+    } else {
+      throw 'Could not launch email';
+    }
+  }
+
+  // Navigate to meal plan screen
+  void _navigateToMealPlan(BuildContext context) async {
+    final recipes = await _firestore.collection('recipes').get().then(
+          (query) => query.docs.map((doc) => doc.data() as Map<String, dynamic>).toList(),
+        );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MealPlanScreen(recipes: recipes),
+      ),
+    );
+  }
+
+  // Navigate to AddRecipe screen
+  void _navigateToAddRecipe(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AddRecipeScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,6 +112,13 @@ void _navigateToMealPlan(BuildContext context) async {
             child: IconButton(
               icon: const Icon(Icons.search),
               onPressed: () => _showSearchDialog(context),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: () => _shareApp(),  // Share app functionality
             ),
           ),
         ],
@@ -150,13 +204,7 @@ void _navigateToMealPlan(BuildContext context) async {
     );
   }
 
-  void _navigateToAddRecipe(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => AddRecipeScreen()),
-    );
-  }
-
+  // Recipe card layout
   Widget _recipeCard(BuildContext context, Map<String, dynamic> recipe, String id) {
     return GestureDetector(
       onTap: () {
@@ -168,79 +216,72 @@ void _navigateToMealPlan(BuildContext context) async {
         );
       },
       child: Card(
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  elevation: 5,
-  child: Padding(
-    padding: const EdgeInsets.all(8.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Recipe Name
-        Text(
-          recipe['name'] ?? '',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        const SizedBox(height: 8),
-
-        // Ingredients
-        Text(
-          'Ingredients: ${recipe['ingredients']?.join(', ') ?? 'N/A'}',
-          style: const TextStyle(fontSize: 14),
-        ),
-        const SizedBox(height: 8),
-
-        // Cuisine
-        Text(
-          'Cuisine: ${recipe['cuisine'] ?? 'N/A'}',
-          style: const TextStyle(fontSize: 14),
-        ),
-        const SizedBox(height: 8),
-
-        // Difficulty
-        Text(
-          'Difficulty: ${recipe['difficulty'] ?? 'N/A'}',
-          style: const TextStyle(fontSize: 14),
-        ),
-        const SizedBox(height: 12),
-
-        // Tags
-        Wrap(
-          spacing: 4,
-          runSpacing: 4,
-          children: (recipe['tags'] as List<dynamic>?)
-                  ?.map((tag) => Chip(label: Text(tag.toString())))
-                  .toList() ??
-              [],
-        ),
-        const SizedBox(height: 12),
-
-        // Centered Button
-        // Centered Button
-        Center(
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      EditRecipeScreen(recipeId: id, recipe: recipe),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 5,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                recipe['name'] ?? '',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Ingredients: ${recipe['ingredients']?.join(', ') ?? 'N/A'}',
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Cuisine: ${recipe['cuisine'] ?? 'N/A'}',
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Difficulty: ${recipe['difficulty'] ?? 'N/A'}',
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: (recipe['tags'] as List<dynamic>? ?? [])
+                    .map((tag) => Chip(label: Text(tag.toString())))
+                    .toList(),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            EditRecipeScreen(recipeId: id, recipe: recipe),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Edit',
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              );
-            },
-            child: const Text(
-              'Edit',
-              textAlign: TextAlign.center,
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.share),
+                onPressed: () {
+                  _shareRecipe(recipe['name']);  // Share individual recipe
+                },
+              ),
+            ],
           ),
         ),
-      ],
-    ),
-  ),
-),
-
+      ),
     );
   }
 
+  // Search dialog
   void _showSearchDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -277,110 +318,87 @@ void _navigateToMealPlan(BuildContext context) async {
     );
   }
 
+  // Filter dialog
   void _showFilterDialog(BuildContext context) {
-  print('Available Ingredients: $availableIngredients'); // Debug print
-  print('Selected Ingredients: $selectedIngredients');   // Debug print
-
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text("Filter Recipes"),
-        content: SingleChildScrollView(
-          child: Column(
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Filter Recipes"),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Cuisine filter
               DropdownButton<String>(
                 value: selectedCuisine,
-                onChanged: (newValue) {
-                  setState(() {
-                    selectedCuisine = newValue!;
-                  });
-                },
-                items: <String>['All', 'Italian', 'Chinese', 'Indian', 'Mexican']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              // Difficulty filter
-              DropdownButton<String>(
-                value: selectedDifficulty,
-                onChanged: (newValue) {
-                  setState(() {
-                    selectedDifficulty = newValue!;
-                  });
-                },
-                items: <String>['All', 'Easy', 'Medium', 'Hard']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              // Ingredients filter as a dropdown
-              DropdownButtonFormField<String>(
-                hint: const Text("Select Ingredients"),
-                isExpanded: true,
-                items: availableIngredients.map<DropdownMenuItem<String>>((String ingredient) {
-                  return DropdownMenuItem<String>(
-                    value: ingredient,
-                    child: Text(ingredient),
-                  );
-                }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    if (value != null && !selectedIngredients.contains(value)) {
-                      selectedIngredients.add(value);
-                    }
+                    selectedCuisine = value!;
                   });
-                  print('Selected Ingredients Updated: $selectedIngredients'); // Debug print
                 },
-              ),
-              // Display selected ingredients
-              Wrap(
-                children: selectedIngredients.map((ingredient) {
-                  return Chip(
-                    label: Text(ingredient),
-                    onDeleted: () {
-                      setState(() {
-                        selectedIngredients.remove(ingredient);
-                      });
-                      print('Ingredient Removed: $ingredient'); // Debug print
-                    },
+                items: ['All', 'Italian', 'Indian', 'Chinese']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
                   );
                 }).toList(),
+              ),
+              DropdownButton<String>(
+                value: selectedDifficulty,
+                onChanged: (value) {
+                  setState(() {
+                    selectedDifficulty = value!;
+                  });
+                },
+                items: ['All', 'Easy', 'Medium', 'Hard']
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ),
+              // Ingredients filter selection
+              Wrap(
+                children: availableIngredients
+                    .map((ingredient) => FilterChip(
+                          label: Text(ingredient),
+                          selected: selectedIngredients.contains(ingredient),
+                          onSelected: (isSelected) {
+                            setState(() {
+                              if (isSelected) {
+                                selectedIngredients.add(ingredient);
+                              } else {
+                                selectedIngredients.remove(ingredient);
+                              }
+                            });
+                          },
+                        ))
+                    .toList(),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              setState(() {
-                selectedCuisine = 'All';
-                selectedDifficulty = 'All';
-                selectedIngredients.clear();
-              });
-
-              Navigator.of(context).pop();
-            },
-            child: const Text('Reset'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Apply Filters'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  selectedCuisine = 'All';
+                  selectedDifficulty = 'All';
+                  selectedIngredients.clear();
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Clear Filters'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Apply'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
