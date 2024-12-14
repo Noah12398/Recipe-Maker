@@ -382,7 +382,7 @@ class _HomescreenState extends State<Homescreen> {
                     selectedCuisine = value!;
                   });
                 },
-                items: ['All', 'Italian', 'Indian', 'Chinese']
+                items: ['All', 'Italian', 'Indian', 'Chinese','American','Asian','Mexican']
                     .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,

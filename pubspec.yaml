@@ -71,6 +71,13 @@ flutter:
   assets:
     - build/Cloud.png
     - build/Picture1.jpg
+    - build/Picture2.jpg
+    - build/Picture3.jpg
+    - build/Picture4.jpg
+    - build/Picture5.jpg
+    - build/Picture6.jpg
+    - build/Picture7.png
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 
