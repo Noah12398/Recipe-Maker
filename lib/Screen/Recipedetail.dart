@@ -77,6 +77,20 @@ class RecipeDetailScreen extends StatelessWidget {
                   _buildNutritionalRow('Fats', '${recipe['nutrition']['fats']} g'),
                 ],
               ),
+              
+              const SizedBox(height: 16),
+              
+              // Adding Recipe Steps
+              Text('Steps to Prepare:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              recipe['steps'] != null
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: (recipe['steps'] as List<dynamic>)
+                          .map<Widget>((step) => Text('• $step', style: TextStyle(fontSize: 16)))
+                          .toList(),
+                    )
+                  : const Text('No steps available', style: TextStyle(fontSize: 16)),
             ],
           ),
         ),

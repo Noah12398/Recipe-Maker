@@ -180,7 +180,7 @@ class _HomescreenState extends State<Homescreen> {
 
             return GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
+                crossAxisCount: 4,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
               ),
@@ -216,71 +216,118 @@ class _HomescreenState extends State<Homescreen> {
         );
       },
       child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 5,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                recipe['name'] ?? '',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Ingredients: ${recipe['ingredients']?.join(', ') ?? 'N/A'}',
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Cuisine: ${recipe['cuisine'] ?? 'N/A'}',
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Difficulty: ${recipe['difficulty'] ?? 'N/A'}',
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: (recipe['tags'] as List<dynamic>? ?? [])
-                    .map((tag) => Chip(label: Text(tag.toString())))
-                    .toList(),
-              ),
-              const SizedBox(height: 12),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            EditRecipeScreen(recipeId: id, recipe: recipe),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Edit',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: () {
-                  _shareRecipe(recipe['name']);  // Share individual recipe
-                },
-              ),
-            ],
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(16), // Softer corners
+  ),
+  elevation: 8, // Subtle shadow for a more premium look
+  margin: const EdgeInsets.all(10), // Adds spacing around the card
+  child: Padding(
+    padding: const EdgeInsets.all(16.0), // Increased padding for a spacious layout
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Recipe Title
+        Text(
+          recipe['name'] ?? 'Recipe Name',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Colors.black87, // Darker color for text readability
           ),
         ),
-      ),
+        const SizedBox(height: 12),
+        
+        // Recipe Details
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Cuisine: ${recipe['cuisine'] ?? 'N/A'}',
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            Text(
+              'Difficulty: ${recipe['difficulty'] ?? 'N/A'}',
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Ingredients
+        Text(
+          'Ingredients: ${recipe['ingredients']?.join(', ') ?? 'N/A'}',
+          style: const TextStyle(fontSize: 14, color: Colors.black87),
+        ),
+        const SizedBox(height: 12),
+
+        // Tags Section
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: (recipe['tags'] as List<dynamic>? ?? [])
+              .map(
+                (tag) => Chip(
+                  label: Text(
+                    tag.toString(),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  backgroundColor: Colors.green.shade100,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 16),
+
+        // Action Buttons
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        EditRecipeScreen(recipeId: id, recipe: recipe),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.edit, color: Colors.white),
+              label: const Text(
+                'Edit',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                primary: Colors.green,
+                onPrimary: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 5,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.share, color: Colors.green),
+              onPressed: () {
+                _shareRecipe(recipe['name']); // Share individual recipe
+              },
+              tooltip: 'Share Recipe',
+            ),
+          ],
+        ),
+      ],
+    ),
+  ),
+),
     );
   }
-
   // Search dialog
   void _showSearchDialog(BuildContext context) {
     showDialog(

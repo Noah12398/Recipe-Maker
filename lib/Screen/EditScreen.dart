@@ -22,6 +22,7 @@ class EditRecipeScreen extends StatelessWidget {
     final TextEditingController fatsController = TextEditingController(text: recipe['nutrition']['fats'].toString());
     final TextEditingController cuisineController = TextEditingController(text: recipe['cuisine']); // Cuisine controller
     final TextEditingController difficultyController = TextEditingController(text: recipe['difficulty'] ?? ''); // Difficulty controller
+    final TextEditingController stepsController = TextEditingController(text: (recipe['steps'] as List).join('\n')); // Steps controller
 
     // Function to update the recipe in Firestore
     void _updateRecipe() async {
@@ -30,6 +31,7 @@ class EditRecipeScreen extends StatelessWidget {
         'description': descriptionController.text,
         'tags': tagsController.text.split(',').map((tag) => tag.trim()).toList(),
         'ingredients': ingredientsController.text.split(',').map((ingredient) => ingredient.trim()).toList(), // Add ingredients
+        'steps': stepsController.text.split('\n').map((step) => step.trim()).toList(), // Add steps
         'nutrition': {
           'calories': int.tryParse(caloriesController.text) ?? 0,
           'protein': int.tryParse(proteinController.text) ?? 0,
@@ -152,6 +154,19 @@ class EditRecipeScreen extends StatelessWidget {
                 controller: fatsController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(labelText: 'Fats', prefixIcon: Icon(Icons.text_fields), border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+
+              // Recipe Steps Field
+              TextField(
+                controller: stepsController,
+                decoration: InputDecoration(
+                  labelText: 'Steps to Prepare',
+                  hintText: 'Enter steps here...',
+                  prefixIcon: Icon(Icons.list),
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 5,  // Allows multi-line input
               ),
               const SizedBox(height: 24),
               ElevatedButton(

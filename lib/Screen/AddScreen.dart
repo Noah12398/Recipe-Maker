@@ -18,6 +18,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   String difficulty = 'Easy'; // Difficulty field, default to 'Easy'
   List<String> tags = [];
   List<String> ingredients = [];
+  List<String> steps = [];  // Steps field
   Map<String, int> nutrition = {
     'calories': 0,
     'protein': 0,
@@ -29,18 +30,24 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      await _firestore.collection('recipes').add({
-        'name': name,
-        'website': website,
-        'tags': tags,
-        'description': description,
-        'ingredients': ingredients,
-        'nutrition': nutrition,
-        'cuisine': cuisine,  // Save cuisine to Firestore
-        'difficulty': difficulty,  // Save difficulty to Firestore
-      });
-
-      Navigator.pop(context);
+      try {
+        // Save the form data to Firestore
+        await _firestore.collection('recipes').add({
+          'name': name,
+          'website': website,
+          'tags': tags,
+          'description': description,
+          'ingredients': ingredients,
+          'nutrition': nutrition,
+          'cuisine': cuisine,  // Save cuisine to Firestore
+          'difficulty': difficulty,  // Save difficulty to Firestore
+          'steps': steps,  // Save steps to Firestore
+        });
+        // Pop the current screen and return to the previous screen
+        Navigator.pop(context);
+      } catch (e) {
+        print("Error saving recipe: $e");
+      }
     }
   }
 
@@ -50,8 +57,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       appBar: AppBar(
         title: const Text('Add Recipe'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(6.0),
+      body: SingleChildScrollView( // Make the form scrollable
+        padding: const EdgeInsets.all(13.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -70,7 +77,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 13),
 
               // Website
               TextFormField(
@@ -85,7 +92,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 13),
 
               // Recipe Description
               TextFormField(
@@ -100,7 +107,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 13),
 
               // Cuisine
               TextFormField(
@@ -115,7 +122,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 13),
 
               // Difficulty
               DropdownButtonFormField<String>(
@@ -139,7 +146,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 13),
 
               // Tags
               TextFormField(
@@ -154,7 +161,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 13),
 
               // Ingredients (comma separated)
               TextFormField(
@@ -169,7 +176,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 13),
 
               // Nutrition Info (Calories, Protein, Carbs, Fats)
               TextFormField(
@@ -185,7 +192,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 13),
 
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Protein (g)'),
@@ -200,7 +207,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height:13),
 
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Carbs (g)'),
@@ -215,7 +222,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 13),
 
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Fats (g)'),
@@ -230,7 +237,22 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 13),
+
+              // Steps (comma separated)
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'Steps (comma separated)'),
+                onSaved: (value) {
+                  steps = value!.split(',').map((e) => e.trim()).toList();
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the cooking steps';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 13),
 
               // Save Button
               ElevatedButton(
