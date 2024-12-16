@@ -58,7 +58,6 @@ class RecipeDetailScreen extends StatelessWidget {
               Text('Cuisine: ${recipe['cuisine'] ?? 'No cuisine available'}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               
-              // Adding the Difficulty field
               Text('Difficulty: ${recipe['difficulty'] ?? 'No difficulty available'}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               
@@ -80,7 +79,6 @@ class RecipeDetailScreen extends StatelessWidget {
               
               const SizedBox(height: 16),
               
-              // Adding Recipe Steps
               Text('Steps to Prepare:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               recipe['steps'] != null

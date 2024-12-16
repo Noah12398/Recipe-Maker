@@ -11,7 +11,6 @@ class EditRecipeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final _firestore = FirebaseFirestore.instance;
 
-    // Controllers for form fields
     final TextEditingController nameController = TextEditingController(text: recipe['name']);
     final TextEditingController descriptionController = TextEditingController(text: recipe['description']);
     final TextEditingController tagsController = TextEditingController(text: (recipe['tags'] as List).join(', '));
@@ -24,7 +23,6 @@ class EditRecipeScreen extends StatelessWidget {
     final TextEditingController difficultyController = TextEditingController(text: recipe['difficulty'] ?? ''); // Difficulty controller
     final TextEditingController stepsController = TextEditingController(text: (recipe['steps'] as List).join('\n')); // Steps controller
 
-    // Function to update the recipe in Firestore
     void _updateRecipe() async {
       final updatedRecipe = {
         'name': nameController.text,
