@@ -2,7 +2,7 @@ name: Deploy to Firebase Hosting on PR
 on:
   pull_request:
     branches:
-      - main # Specify the branch you want the workflow to run on PRs
+      - main
 
 permissions:
   checks: write
@@ -14,31 +14,42 @@ jobs:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Install dependencies for Flutter and Firebase
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: 'stable'
+          channel: 'stable'
+          cache: true
+
+      # Debug steps to verify Flutter installation
+      - name: Debug - Print PATH
+        run: echo $PATH
+        
+      - name: Debug - List Flutter directory
+        run: |
+          ls -la $GITHUB_WORKSPACE
+          which flutter || echo "Flutter not in PATH"
+          
+      - name: Verify Flutter installation
+        run: |
+          flutter --version || echo "Flutter command failed"
+          flutter doctor -v || echo "Flutter doctor failed"
 
       - name: Install dependencies
         run: flutter pub get
-
-      # Explicitly ensure Flutter is in the PATH
-      - name: Add Flutter to PATH
-        run: echo "$HOME/flutter/bin" >> $GITHUB_PATH
-
-      # Verify Flutter installation
-      - name: Verify Flutter installation
-        run: flutter --version
-
-      # Build Flutter web app
-      - name: Build Flutter web app
-        run: flutter build web
-
-      # Deploy to Firebase Hosting
+        
+      - name: Enable web
+        run: flutter config --enable-web
+      
+      - name: Build web
+        run: |
+          pwd
+          echo "Current directory contents:"
+          ls -la
+          flutter build web
+        
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
