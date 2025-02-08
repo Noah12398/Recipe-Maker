@@ -1,58 +1,41 @@
-name: Deploy to Firebase Hosting on PR
+name: Deploy to Firebase Hosting on merge
 on:
-  pull_request:
+  push:
     branches:
-      - main
-
-permissions:
-  checks: write
-  contents: read
-  pull-requests: write
+      - master
 
 jobs:
-  build_and_preview:
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+  build_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      # Install latest stable Flutter (which includes Dart >= 3.1.4)
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable'
+          flutter-version: '3.27.4'  # Ensure Dart 3.1.4+ is included
           channel: 'stable'
-          cache: true
 
-      # Debug steps to verify Flutter installation
-      - name: Debug - Print PATH
-        run: echo $PATH
-        
-      - name: Debug - List Flutter directory
-        run: |
-          ls -la $GITHUB_WORKSPACE
-          which flutter || echo "Flutter not in PATH"
-          
-      - name: Verify Flutter installation
-        run: |
-          flutter --version || echo "Flutter command failed"
-          flutter doctor -v || echo "Flutter doctor failed"
+      # Verify the installed Flutter and Dart versions
+      - run: flutter --version
 
-      - name: Install dependencies
-        run: flutter pub get
-        
-      - name: Enable web
-        run: flutter config --enable-web
-      
-      - name: Build web
-        run: |
-          pwd
-          echo "Current directory contents:"
-          ls -la
-          flutter build web
-        
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      # Enable web support if necessary
+      - run: flutter config --enable-web
+
+      # Clean old builds (optional, helps with dependency issues)
+      - run: flutter clean
+
+      # Install dependencies
+      - run: flutter pub get
+
+      # Build the web app
+      - run: flutter build web
+
+      # Deploy to Firebase Hosting
+      - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RECIPE_MAKER_9C7A0 }}
+          channelId: live
           projectId: recipe-maker-9c7a0
