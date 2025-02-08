@@ -12,16 +12,21 @@ permissions:
 jobs:
   build_and_preview:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
     steps:
       - uses: actions/checkout@v4
 
-      # Setup Java for Windows
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+      # Debug Step - Show initial environment
+      - name: Debug Environment
+        run: |
+          Write-Host "Initial PATH: $env:Path"
+          Write-Host "Current Location: $PWD"
+          Write-Host "Windows Version:"
+          Get-ComputerInfo | Select-Object WindowsVersion
 
-      # Setup Flutter with Windows-specific configuration
+      # Setup Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -29,26 +34,34 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # Verify Flutter installation
-      - name: Verify Flutter
+      # Verify Flutter is in PATH
+      - name: Verify Flutter Installation
         run: |
+          $flutterPath = Get-Command flutter -ErrorAction SilentlyContinue
+          if ($flutterPath) {
+              Write-Host "Flutter found at: $($flutterPath.Source)"
+          } else {
+              Write-Host "Flutter not found in PATH"
+              Write-Host "Current PATH: $env:Path"
+              exit 1
+          }
           flutter --version
           flutter doctor
-        shell: pwsh
 
-      # Install dependencies and enable web
-      - name: Setup Flutter project
+      # Install dependencies
+      - name: Install Dependencies
         run: |
           flutter pub get
           flutter config --enable-web
-        shell: pwsh
 
-      # Build for web
-      - name: Build web
-        run: flutter build web
-        shell: pwsh
+      # Build web
+      - name: Build Web
+        run: |
+          $env:Path = "$env:FLUTTER_ROOT\bin;$env:Path"
+          Write-Host "Building from directory: $PWD"
+          Write-Host "Using Flutter from: $env:FLUTTER_ROOT\bin"
+          flutter build web
 
-      # Deploy to Firebase
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
