@@ -1,24 +1,27 @@
-name: Debug Flutter Installation
+name: Deploy to Firebase Hosting on PR
 on:
   pull_request:
     branches:
       - main
 
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
 jobs:
-  debug_flutter:
+  build_and_preview:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Debug Pre-Flutter Installation
+
+      - name: Debug Pre-Flutter
         run: |
-          echo "===== Pre-Flutter Installation State ====="
-          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
           echo "Current directory: $(pwd)"
           echo "Directory contents:"
           ls -la
           echo "PATH: $PATH"
-          echo "===================================="
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -27,61 +30,35 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Debug Post-Flutter Installation
+      - name: Debug Post-Flutter Setup
         run: |
-          echo "===== Post-Flutter Installation State ====="
-          echo "Checking Flutter binary location:"
+          echo "PATH after Flutter setup: $PATH"
+          echo "Looking for Flutter:"
           which flutter || echo "Flutter not in PATH"
-          
-          echo "\nChecking if Flutter directory exists:"
-          ls -la $GITHUB_WORKSPACE/flutter || echo "Flutter directory not found in GITHUB_WORKSPACE"
-          ls -la /opt/hostedtoolcache/flutter || echo "Flutter not found in hostedtoolcache"
-          
-          echo "\nChecking PATH again:"
-          echo $PATH
-          
-          echo "\nFlutter version (if available):"
-          flutter --version || echo "Flutter command failed"
-          
-          echo "\nDirectory structure of potential Flutter locations:"
-          find $GITHUB_WORKSPACE -name flutter -type d || echo "No flutter directory in GITHUB_WORKSPACE"
-          find /opt/hostedtoolcache -name flutter -type d || echo "No flutter directory in hostedtoolcache"
-          
-          echo "\nChecking environment variables:"
-          env | grep -i flutter
-          
-          echo "===================================="
+          echo "Flutter location contents:"
+          ls -la $(dirname $(which flutter 2>/dev/null)) || echo "Cannot list Flutter directory"
 
-      - name: Try Direct Flutter Command
+      - name: Install dependencies
         run: |
-          echo "===== Attempting Flutter Commands ====="
-          # Try different possible Flutter paths
-          echo "Attempt 1: Direct flutter command"
-          flutter --version || echo "Direct flutter command failed"
-          
-          echo "\nAttempt 2: Using GITHUB_WORKSPACE path"
-          $GITHUB_WORKSPACE/flutter/bin/flutter --version || echo "GITHUB_WORKSPACE flutter path failed"
-          
-          echo "\nAttempt 3: Checking hostedtoolcache"
-          /opt/hostedtoolcache/flutter/*/x64/bin/flutter --version || echo "Hostedtoolcache flutter path failed"
-          
-          echo "===================================="
+          echo "Running pub get from: $(pwd)"
+          flutter pub get || echo "pub get failed"
 
-      - name: Debug Environment
+      - name: Enable web
         run: |
-          echo "===== System Information ====="
-          echo "Operating System:"
-          uname -a
-          
-          echo "\nDisk Space:"
-          df -h
-          
-          echo "\nMemory Info:"
-          free -h
-          
-          echo "\nCurrent User:"
-          whoami
-          
-          echo "\nUser Permissions:"
-          id
-          echo "===================================="
+          echo "Enabling web support"
+          flutter config --enable-web || echo "web enable failed"
+
+      - name: Build web
+        run: |
+          echo "Starting web build"
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          flutter build web || echo "web build failed"
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RECIPE_MAKER_9C7A0 }}
+          projectId: recipe-maker-9c7a0
