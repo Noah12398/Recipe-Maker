@@ -26,6 +26,10 @@ jobs:
         with:
           flutter-version: 'stable'
 
+      # Check Flutter installation
+      - name: Verify Flutter installation
+        run: flutter --version
+
       # Install dependencies
       - name: Install dependencies
         run: flutter pub get
