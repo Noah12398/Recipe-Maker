@@ -170,8 +170,7 @@ class EditRecipeScreen extends StatelessWidget {
               ElevatedButton(
                 onPressed: _updateRecipe,
                 style: ElevatedButton.styleFrom(
-                  primary: Color.fromARGB(255, 26, 207, 44),
-                  onPrimary: Colors.white,
+                  foregroundColor: Colors.white, backgroundColor: Color.fromARGB(255, 26, 207, 44),
                   padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   elevation: 5,

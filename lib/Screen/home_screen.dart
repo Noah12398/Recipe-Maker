@@ -297,8 +297,7 @@ class _HomescreenState extends State<Homescreen> {
                       style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
-                      primary: Colors.green,
-                      onPrimary: Colors.white,
+                      foregroundColor: Colors.white, backgroundColor: Colors.green,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 10,
