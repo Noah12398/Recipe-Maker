@@ -183,7 +183,7 @@ class _HomescreenState extends State<Homescreen> {
                 crossAxisCount: MediaQuery.of(context).size.width < 600
                     ? 1 // 1 column for mobile
                     : MediaQuery.of(context).size.width < 1200
-                        ? 2 // 2 columns for tablets
+                        ? 3 // 2 columns for tablets
                         : 4, // 4 columns for desktops
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
