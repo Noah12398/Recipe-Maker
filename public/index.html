@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <base href="/">
 
@@ -7,14 +8,14 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
 
-  <!-- iOS meta tags & icons -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- iOS & Mobile meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="recipe">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="favicon.png" />
 
   <title>recipe</title>
   <link rel="manifest" href="manifest.json">
@@ -23,19 +24,26 @@
     // The value below is injected by flutter build, do not touch.
     const flutter_service_worker_version = "3866553588";
   </script>
-  <!-- This script adds the flutter initialization JS code -->
+  <!-- Flutter initialization script -->
   <script src="flutter.js" defer></script>
 </head>
+
 <body>
   <script>
-    window.addEventListener('load', function(ev) {
-      // Download main.dart.js
+    window.addEventListener('load', function (ev) {
+      // Ensure Flutter build config is loaded
+      if (!_flutter.buildConfig) {
+        console.error("FlutterLoader.load requires _flutter.buildConfig to be set");
+        return;
+      }
+
+      // Load Flutter app
       _flutter.loader.load({
         serviceWorker: {
           serviceWorkerVersion: flutter_service_worker_version,
         },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
+        onEntrypointLoaded: function (engineInitializer) {
+          engineInitializer.initializeEngine().then(function (appRunner) {
             appRunner.runApp();
           });
         }
@@ -43,4 +51,5 @@
     });
   </script>
 </body>
+
 </html>
