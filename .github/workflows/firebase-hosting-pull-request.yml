@@ -10,14 +10,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Install Flutter SDK
+      # Install Flutter SDK with the required Dart version
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.7.0'  # Or specify the version you are using
+          flutter-version: '3.10.0'  # Choose a version that supports Dart SDK >=3.1.4
 
-      # Install dependencies and check if Flutter is set up properly
+      # Check if Flutter and Dart SDK are set up properly
       - run: flutter doctor
+
+      # Install dependencies for the project
+      - run: flutter pub get
 
       # Build the web app
       - run: flutter build web
