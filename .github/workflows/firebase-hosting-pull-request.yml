@@ -30,6 +30,10 @@ jobs:
       - name: Add Flutter to PATH
         run: echo "$HOME/flutter/bin" >> $GITHUB_PATH
 
+      # Verify Flutter installation
+      - name: Verify Flutter installation
+        run: flutter --version
+
       # Build Flutter web app
       - name: Build Flutter web app
         run: flutter build web
