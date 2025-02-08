@@ -1,20 +1,24 @@
-name: Deploy to Firebase Hosting on PR
+name: Debug Flutter Installation
 on:
   pull_request:
     branches:
       - main
 
-permissions:
-  checks: write
-  contents: read
-  pull-requests: write
-
 jobs:
-  build_and_preview:
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+  debug_flutter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Debug Pre-Flutter Installation
+        run: |
+          echo "===== Pre-Flutter Installation State ====="
+          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "PATH: $PATH"
+          echo "===================================="
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -23,36 +27,61 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # Debug steps to verify Flutter installation
-      - name: Debug - Print PATH
-        run: echo $PATH
-        
-      - name: Debug - List Flutter directory
+      - name: Debug Post-Flutter Installation
         run: |
-          ls -la $GITHUB_WORKSPACE
+          echo "===== Post-Flutter Installation State ====="
+          echo "Checking Flutter binary location:"
           which flutter || echo "Flutter not in PATH"
           
-      - name: Verify Flutter installation
-        run: |
+          echo "\nChecking if Flutter directory exists:"
+          ls -la $GITHUB_WORKSPACE/flutter || echo "Flutter directory not found in GITHUB_WORKSPACE"
+          ls -la /opt/hostedtoolcache/flutter || echo "Flutter not found in hostedtoolcache"
+          
+          echo "\nChecking PATH again:"
+          echo $PATH
+          
+          echo "\nFlutter version (if available):"
           flutter --version || echo "Flutter command failed"
-          flutter doctor -v || echo "Flutter doctor failed"
+          
+          echo "\nDirectory structure of potential Flutter locations:"
+          find $GITHUB_WORKSPACE -name flutter -type d || echo "No flutter directory in GITHUB_WORKSPACE"
+          find /opt/hostedtoolcache -name flutter -type d || echo "No flutter directory in hostedtoolcache"
+          
+          echo "\nChecking environment variables:"
+          env | grep -i flutter
+          
+          echo "===================================="
 
-      - name: Install dependencies
-        run: flutter pub get
-        
-      - name: Enable web
-        run: flutter config --enable-web
-      
-      - name: Build web
+      - name: Try Direct Flutter Command
         run: |
-          pwd
-          echo "Current directory contents:"
-          ls -la
-          flutter build web
-        
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RECIPE_MAKER_9C7A0 }}
-          projectId: recipe-maker-9c7a0
+          echo "===== Attempting Flutter Commands ====="
+          # Try different possible Flutter paths
+          echo "Attempt 1: Direct flutter command"
+          flutter --version || echo "Direct flutter command failed"
+          
+          echo "\nAttempt 2: Using GITHUB_WORKSPACE path"
+          $GITHUB_WORKSPACE/flutter/bin/flutter --version || echo "GITHUB_WORKSPACE flutter path failed"
+          
+          echo "\nAttempt 3: Checking hostedtoolcache"
+          /opt/hostedtoolcache/flutter/*/x64/bin/flutter --version || echo "Hostedtoolcache flutter path failed"
+          
+          echo "===================================="
+
+      - name: Debug Environment
+        run: |
+          echo "===== System Information ====="
+          echo "Operating System:"
+          uname -a
+          
+          echo "\nDisk Space:"
+          df -h
+          
+          echo "\nMemory Info:"
+          free -h
+          
+          echo "\nCurrent User:"
+          whoami
+          
+          echo "\nUser Permissions:"
+          id
+          echo "===================================="
