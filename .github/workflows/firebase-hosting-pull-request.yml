@@ -11,22 +11,19 @@ permissions:
 
 jobs:
   build_and_preview:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: pwsh
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # Debug Step - Show initial environment
-      - name: Debug Environment
+      # Debug initial state
+      - name: Debug Pre-Flutter
         run: |
-          Write-Host "Initial PATH: $env:Path"
-          Write-Host "Current Location: $PWD"
-          Write-Host "Windows Version:"
-          Get-ComputerInfo | Select-Object WindowsVersion
+          echo "Initial state:"
+          echo "PWD: $(pwd)"
+          echo "PATH: $PATH"
+          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
 
-      # Setup Flutter
+      # Setup Flutter using full path specification
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -34,32 +31,29 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # Verify Flutter is in PATH
-      - name: Verify Flutter Installation
+      # Export Flutter path and verify installation
+      - name: Export Flutter Path
         run: |
-          $flutterPath = Get-Command flutter -ErrorAction SilentlyContinue
-          if ($flutterPath) {
-              Write-Host "Flutter found at: $($flutterPath.Source)"
-          } else {
-              Write-Host "Flutter not found in PATH"
-              Write-Host "Current PATH: $env:Path"
-              exit 1
-          }
-          flutter --version
-          flutter doctor
+          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
+          echo "$GITHUB_WORKSPACE/flutter/bin" >> $GITHUB_PATH
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          source ~/.bashrc || true
+          which flutter || echo "Flutter not found in PATH"
+          flutter --version || echo "Flutter version failed"
 
-      # Install dependencies
+      # Install dependencies with explicit path
       - name: Install Dependencies
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter config --enable-web
 
-      # Build web
+      # Build web with explicit path
       - name: Build Web
         run: |
-          $env:Path = "$env:FLUTTER_ROOT\bin;$env:Path"
-          Write-Host "Building from directory: $PWD"
-          Write-Host "Using Flutter from: $env:FLUTTER_ROOT\bin"
+          export PATH="$HOME/flutter/bin:$PATH"
+          echo "Current PATH: $PATH"
+          echo "Flutter location: $(which flutter)"
           flutter build web
 
       - name: Deploy to Firebase Hosting
