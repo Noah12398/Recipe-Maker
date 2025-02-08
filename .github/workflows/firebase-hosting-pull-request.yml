@@ -11,54 +11,48 @@ permissions:
 
 jobs:
   build_and_preview:
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug Pre-Flutter
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Directory contents:"
-          ls -la
-          echo "PATH: $PATH"
+      # Setup Java for Windows
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
+      # Setup Flutter with Windows-specific configuration
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable'
+          flutter-version: '3.19.0'
           channel: 'stable'
           cache: true
 
-      - name: Debug Post-Flutter Setup
+      # Verify Flutter installation
+      - name: Verify Flutter
         run: |
-          echo "PATH after Flutter setup: $PATH"
-          echo "Looking for Flutter:"
-          which flutter || echo "Flutter not in PATH"
-          echo "Flutter location contents:"
-          ls -la $(dirname $(which flutter 2>/dev/null)) || echo "Cannot list Flutter directory"
+          flutter --version
+          flutter doctor
+        shell: pwsh
 
-      - name: Install dependencies
+      # Install dependencies and enable web
+      - name: Setup Flutter project
         run: |
-          echo "Running pub get from: $(pwd)"
-          flutter pub get || echo "pub get failed"
+          flutter pub get
+          flutter config --enable-web
+        shell: pwsh
 
-      - name: Enable web
-        run: |
-          echo "Enabling web support"
-          flutter config --enable-web || echo "web enable failed"
-
+      # Build for web
       - name: Build web
-        run: |
-          echo "Starting web build"
-          echo "Current directory: $(pwd)"
-          echo "Directory contents:"
-          ls -la
-          flutter build web || echo "web build failed"
+        run: flutter build web
+        shell: pwsh
 
+      # Deploy to Firebase
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RECIPE_MAKER_9C7A0 }}
           projectId: recipe-maker-9c7a0
+          channelId: preview
