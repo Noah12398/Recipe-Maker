@@ -22,24 +22,34 @@ jobs:
           flutter-version: 'stable'
           channel: 'stable'
           cache: true
-      
-      - name: Cache Flutter dependencies
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.PUB_CACHE }}
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
+
+      # Debug steps to verify Flutter installation
+      - name: Debug - Print PATH
+        run: echo $PATH
+        
+      - name: Debug - List Flutter directory
+        run: |
+          ls -la $GITHUB_WORKSPACE
+          which flutter || echo "Flutter not in PATH"
+          
+      - name: Verify Flutter installation
+        run: |
+          flutter --version || echo "Flutter command failed"
+          flutter doctor -v || echo "Flutter doctor failed"
 
       - name: Install dependencies
         run: flutter pub get
-
+        
       - name: Enable web
         run: flutter config --enable-web
       
       - name: Build web
-        run: flutter build web
-
+        run: |
+          pwd
+          echo "Current directory contents:"
+          ls -la
+          flutter build web
+        
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
