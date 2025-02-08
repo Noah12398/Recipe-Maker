@@ -59,10 +59,10 @@ class _HomescreenState extends State<Homescreen> {
     }
   }
 
-  void _shareRecipe(String recipeName,String steps) async {
+  void _shareRecipe(String recipeName, String steps) async {
     final String text = "Check out this recipe: $recipeName!\n\n"
-      "Here are the steps to make it:\n$steps\n\n"
-      "It's delicious and easy to make!";
+        "Here are the steps to make it:\n$steps\n\n"
+        "It's delicious and easy to make!";
     final Uri shareUri = Uri(
       scheme: 'mailto',
       path: '',
@@ -78,7 +78,9 @@ class _HomescreenState extends State<Homescreen> {
 
   void _navigateToMealPlan(BuildContext context) async {
     final recipes = await _firestore.collection('recipes').get().then(
-          (query) => query.docs.map((doc) => doc.data() as Map<String, dynamic>).toList(),
+          (query) => query.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList(),
         );
 
     Navigator.push(
@@ -114,7 +116,7 @@ class _HomescreenState extends State<Homescreen> {
             padding: const EdgeInsets.only(right: 16.0),
             child: IconButton(
               icon: const Icon(Icons.share),
-              onPressed: () => _shareApp(),  // Share app functionality
+              onPressed: () => _shareApp(), // Share app functionality
             ),
           ),
         ],
@@ -167,22 +169,29 @@ class _HomescreenState extends State<Homescreen> {
                   recipeData['difficulty'] == selectedDifficulty;
 
               final ingredientsMatch = selectedIngredients.isEmpty ||
-                  (recipeData['ingredients'] as List<dynamic>? ?? [])
-                      .any((ingredient) =>
-                          selectedIngredients.contains(ingredient));
+                  (recipeData['ingredients'] as List<dynamic>? ?? []).any(
+                      (ingredient) => selectedIngredients.contains(ingredient));
 
-              return nameMatch && cuisineMatch && difficultyMatch && ingredientsMatch;
+              return nameMatch &&
+                  cuisineMatch &&
+                  difficultyMatch &&
+                  ingredientsMatch;
             }).toList();
 
             return GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: MediaQuery.of(context).size.width < 600
+                    ? 1 // 1 column for mobile
+                    : MediaQuery.of(context).size.width < 1200
+                        ? 2 // 2 columns for tablets
+                        : 4, // 4 columns for desktops
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
               ),
               itemCount: filteredRecipes.length,
               itemBuilder: (context, index) {
-                final recipe = filteredRecipes[index].data() as Map<String, dynamic>;
+                final recipe =
+                    filteredRecipes[index].data() as Map<String, dynamic>;
                 return _recipeCard(context, recipe, filteredRecipes[index].id);
               },
             );
@@ -200,132 +209,138 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 
-  Widget _recipeCard(BuildContext context, Map<String, dynamic> recipe, String id) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => RecipeDetailScreen(recipe: recipe),
+  Widget _recipeCard(
+      BuildContext context, Map<String, dynamic> recipe, String id) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RecipeDetailScreen(recipe: recipe),
+          ),
+        );
+      },
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
-      );
-    },
-    child: Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      elevation: 8,
-      margin: const EdgeInsets.all(10),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                recipe['name'] ?? 'Recipe Name',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: Colors.black87, // Darker color for text readability
+        elevation: 8,
+        margin: const EdgeInsets.all(10),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  recipe['name'] ?? 'Recipe Name',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Colors.black87, // Darker color for text readability
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // Cuisine and Difficulty
-              Wrap(
-                spacing: 18.0,
-                children: [
-                  Text(
-                    'Cuisine: ${recipe['cuisine'] ?? 'N/A'}',
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                  Text(
-                    'Difficulty: ${recipe['difficulty'] ?? 'N/A'}',
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+                // Cuisine and Difficulty
+                Wrap(
+                  spacing: 18.0,
+                  children: [
+                    Text(
+                      'Cuisine: ${recipe['cuisine'] ?? 'N/A'}',
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    Text(
+                      'Difficulty: ${recipe['difficulty'] ?? 'N/A'}',
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
 
-              // Ingredients
-              Text(
-                'Ingredients: ${recipe['ingredients']?.join(', ') ?? 'N/A'}',
-                style: const TextStyle(fontSize: 14, color: Colors.black87),
-              ),
-              const SizedBox(height: 12),
+                // Ingredients
+                Text(
+                  'Ingredients: ${recipe['ingredients']?.join(', ') ?? 'N/A'}',
+                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                ),
+                const SizedBox(height: 12),
 
-              // Tags
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: (recipe['tags'] as List<dynamic>? ?? [])
-                    .map(
-                      (tag) => Chip(
-                        label: Text(
-                          tag.toString(),
-                          style: const TextStyle(fontSize: 12),
+                // Tags
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: (recipe['tags'] as List<dynamic>? ?? [])
+                      .map(
+                        (tag) => Chip(
+                          label: Text(
+                            tag.toString(),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          backgroundColor: Colors.green.shade100,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        backgroundColor: Colors.green.shade100,
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: 16),
+
+                // Edit and Share Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                EditRecipeScreen(recipeId: id, recipe: recipe),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.edit, color: Colors.white),
+                      label: const Text(
+                        'Edit',
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        elevation: 5,
                       ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 16),
-
-              // Edit and Share Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              EditRecipeScreen(recipeId: id, recipe: recipe),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.edit, color: Colors.white),
-                    label: const Text(
-                      'Edit',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white, backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 5,
+                    IconButton(
+                      icon: const Icon(Icons.share, color: Colors.green),
+                      onPressed: () {
+                        final String recipeName =
+                            recipe['name'] ?? 'Unknown Recipe';
+                        final String recipeSteps =
+                            (recipe['steps'] as List<dynamic>?)?.join('\n') ??
+                                'Steps not available.';
+                        _shareRecipe(recipeName, recipeSteps);
+                      },
+                      tooltip: 'Share Recipe',
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.share, color: Colors.green),
-                    onPressed: () {
-                      final String recipeName = recipe['name'] ?? 'Unknown Recipe';
-                      final String recipeSteps = (recipe['steps'] as List<dynamic>?)?.join('\n') ?? 'Steps not available.';
-                      _shareRecipe(recipeName,recipeSteps);
-                    },
-                    tooltip: 'Share Recipe',
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void _showSearchDialog(BuildContext context) {
     showDialog(
@@ -379,8 +394,15 @@ class _HomescreenState extends State<Homescreen> {
                     selectedCuisine = value!;
                   });
                 },
-                items: ['All', 'Italian', 'Indian', 'Chinese','American','Asian','Mexican']
-                    .map<DropdownMenuItem<String>>((String value) {
+                items: [
+                  'All',
+                  'Italian',
+                  'Indian',
+                  'Chinese',
+                  'American',
+                  'Asian',
+                  'Mexican'
+                ].map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -402,7 +424,6 @@ class _HomescreenState extends State<Homescreen> {
                   );
                 }).toList(),
               ),
-
               Wrap(
                 children: availableIngredients
                     .map((ingredient) => FilterChip(
