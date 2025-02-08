@@ -1,65 +1,31 @@
-name: Deploy to Firebase Hosting on PR
+name: Deploy to Firebase Hosting on merge
 on:
-  pull_request:
+  push:
     branches:
-      - main
-
-permissions:
-  checks: write
-  contents: read
-  pull-requests: write
+      - master
 
 jobs:
-  build_and_preview:
+  build_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # Debug initial state
-      - name: Debug Pre-Flutter
-        run: |
-          echo "Initial state:"
-          echo "PWD: $(pwd)"
-          echo "PATH: $PATH"
-          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
-
-      # Setup Flutter using full path specification
+      # Install Flutter SDK
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
-          channel: 'stable'
-          cache: true
+          flutter-version: '3.7.0'  # Or specify the version you are using
 
-      # Export Flutter path and verify installation
-      - name: Export Flutter Path
-        run: |
-          echo "$HOME/.pub-cache/bin" >> $GITHUB_PATH
-          echo "$GITHUB_WORKSPACE/flutter/bin" >> $GITHUB_PATH
-          echo "$HOME/flutter/bin" >> $GITHUB_PATH
-          source ~/.bashrc || true
-          which flutter || echo "Flutter not found in PATH"
-          flutter --version || echo "Flutter version failed"
+      # Install dependencies and check if Flutter is set up properly
+      - run: flutter doctor
 
-      # Install dependencies with explicit path
-      - name: Install Dependencies
-        run: |
-          export PATH="$HOME/flutter/bin:$PATH"
-          flutter pub get
-          flutter config --enable-web
+      # Build the web app
+      - run: flutter build web
 
-      # Build web with explicit path
-      - name: Build Web
-        run: |
-          export PATH="$HOME/flutter/bin:$PATH"
-          echo "Current PATH: $PATH"
-          echo "Flutter location: $(which flutter)"
-          flutter build web
-
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      # Deploy to Firebase Hosting
+      - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_RECIPE_MAKER_9C7A0 }}
+          channelId: live
           projectId: recipe-maker-9c7a0
-          channelId: preview
